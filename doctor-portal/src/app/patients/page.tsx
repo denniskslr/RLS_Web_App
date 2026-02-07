@@ -1,124 +1,62 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-/**
- * Vereinfachter Patiententyp für die Anzeige im Frontend.
- * Entspricht bewusst NICHT 1:1 dem Backend-Modell,
- * sondern nur dem, was die UI wirklich braucht.
- */
-type Patient = {
-  id: string;
-  name: string;
-  birthDate?: string;
-};
+export default function PatientsSearchPage() {
+  const [patientId, setPatientId] = useState("");
+  const [error, setError] = useState("");
+  const router = useRouter();
 
-export default function PatientsPage() {
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
 
-  useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-
-    // Kein Token → User ist nicht eingeloggt
-    if (!token) {
-      setError("Nicht eingeloggt.");
-      setLoading(false);
+    if (!patientId.trim()) {
+      setError("Bitte eine Patienten-ID eingeben");
       return;
     }
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/patients/`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then(async (res) => {
-        // Backend erreichbar, aber keine Berechtigung / keine Daten
-        if (!res.ok) {
-          throw new Error("no-data");
-        }
-        return res.json();
-      })
-      .then((data) => {
-        /**
-         * Erwartung:
-         * data = Array von Patienten aus dem Backend
-         * Falls leer → UI zeigt leere Liste
-         */
-        setPatients(
-          (data ?? []).map((p: any) => ({
-            id: p.id,
-            name: p.name ?? "Ohne Name",
-            birthDate: p.birth_date,
-          }))
-        );
-      })
-      .catch(() => {
-        /**
-         * Bewusster Fallback:
-         * Backend liefert aktuell keine Daten (z. B. keine Zuordnung),
-         * Frontend bleibt trotzdem funktionsfähig.
-         */
-        setPatients([
-          {
-            id: "demo-1",
-            name: "Max Mustermann",
-            birthDate: "1980-01-01",
-          },
-          {
-            id: "demo-2",
-            name: "Erika Beispiel",
-            birthDate: "1975-05-12",
-          },
-        ]);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+    router.push(`/patient-detail/${patientId}`);
+  }
 
   return (
-    <main className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">Patienten</h2>
+    <div className="w-full max-w-md">
+      <h2 className="text-xl font-semibold mb-2 text-center">
+        Patient suchen
+      </h2>
 
-      {/* Loading-State */}
-      {loading && <p className="text-gray-600">Lade Patienten …</p>}
+      <p className="text-sm text-gray-600 mb-6 text-center">
+        Bitte geben Sie die Patienten-ID ein, um die Patientendaten aufzurufen.
+      </p>
 
-      {/* Fehler-State */}
-      {!loading && error && (
-        <p className="text-red-600">{error}</p>
-      )}
+      <form onSubmit={handleSearch} className="space-y-4">
+        <div>
+          <label className="block text-sm mb-1">
+            Patienten-ID
+          </label>
+          <input
+            type="text"
+            value={patientId}
+            onChange={(e) => setPatientId(e.target.value)}
+            className="w-full border rounded px-3 py-2"
+            placeholder="z. B. 12345"
+          />
+        </div>
 
-      {/* Leere Liste */}
-      {!loading && !error && patients.length === 0 && (
-        <p className="text-sm text-gray-600">
-          Keine Patienten vorhanden.
-        </p>
-      )}
+        {error && (
+          <p className="text-red-600 text-sm text-center">
+            {error}
+          </p>
+        )}
 
-      {/* Patientenliste */}
-      {!loading && patients.length > 0 && (
-        <ul className="space-y-2">
-          {patients.map((p) => (
-            <li
-              key={p.id}
-              className="p-3 rounded-xl border hover:bg-gray-50"
-            >
-              <Link href={`/patient-detail?id=${p.id}`}>
-                <div className="font-medium underline">
-                  {p.name}
-                </div>
-                <div className="text-sm text-gray-600">
-                  ID: {p.id}
-                  {p.birthDate && ` · Geburtsdatum: ${p.birthDate}`}
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
+        <button
+          type="submit"
+          className="w-full bg-black text-white py-2 rounded hover:bg-gray-800"
+        >
+          Patient anzeigen
+        </button>
+      </form>
+    </div>
   );
 }

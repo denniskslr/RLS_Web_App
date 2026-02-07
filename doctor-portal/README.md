@@ -1,165 +1,182 @@
-# RLS Care – Arztportal (Frontend)
+# SomniLink – Arztportal (Web-App)
 
-Dies ist die Web-Anwendung für Ärztinnen und Ärzte im RLS-Care-System.  
-Über diese Oberfläche können Patientendaten aus einem FHIR-Server abgerufen und angezeigt werden.
+## Projektbeschreibung
 
-Das Frontend basiert auf **Next.js (React)** und kommuniziert mit einem lokalen **HAPI-FHIR-Server**, der über Docker läuft.
+**SomniLink** ist eine einfache, patientenzentrierte Web-Anwendung für Ärzte.  
+Ziel der Anwendung ist es, nach einem Login gezielt Patienten über eine Patienten-ID aufzurufen und deren Informationen übersichtlich darzustellen.
 
----
+Die App wurde bewusst **schlank und übersichtlich** umgesetzt und konzentriert sich auf den Kernworkflow eines Arztes:
 
-## 🚀 Projekt starten
- 
-### 1. FHIR-Server starten (Backend) 
-Am besten in einem extra Terminal 
-
-Im Hauptordner `rls-care` im Terminal:
-
-cd ~/rls-care   
-docker compose up -d    #Starte alle benötigten Server im Hintergrund
-
-Der FHIR-Server läuft anschließend unter:
-
-http://localhost:8080/fhir
-
-*Beenden mit:*
-cd ~/rls-care
-docker compose down
-
+**Login → Patient suchen → Patientendetails anzeigen**
 
 ---
 
-### 2. Frontend starten (Arztportal)
-Am besten in einem extra Terminal 
+## Funktionsübersicht
 
-In den Ordner `doctor-portal` wechseln:
+- 🔐 **Login**
+  - Anmeldung eines Arztes über Benutzername und Passwort
+  - Kommunikation mit einem Django-Backend (JWT-Authentifizierung)
 
-cd ~/rls-care/doctor-portal   
-pnpm install    #Installiere alles, was dieses Projekt zum Starten braucht
-pnpm dev    #Starte die Web-App zum Entwickeln
+- 🔎 **Patientensuche**
+  - Eingabe einer Patienten-ID
+  - Weiterleitung zur passenden Patientendetailseite
 
-Die Web-App ist dann erreichbar unter:
+- 📄 **Patientendetailseite**
+  - Anzeige der Patienten-ID
+  - Strukturierte Platzhalter für:
+    - Stammdaten
+    - Medizinische Informationen
+    - Verlauf / Dokumentation
 
+- 🚪 **Logout**
+  - Abmeldung über einen globalen Logout-Button
+  - Rückkehr zur Login-Seite
+
+---
+
+## Anwendungsfluss
+
+1. Arzt öffnet die Anwendung  
+2. Login mit Benutzername und Passwort  
+3. Weiterleitung zur Patientensuchseite  
+4. Eingabe einer Patienten-ID  
+5. Anzeige der Patientendetailseite  
+6. Optional: Logout  
+
+Der Ablauf orientiert sich an realistischen Arbeitsprozessen im medizinischen Umfeld.
+
+---
+
+## Projektstruktur
+
+```
+src/app/
+├─ login/                     # Login-Seite
+│  └─ page.tsx
+│
+├─ patients/                  # Patientensuche (Einstiegsseite nach Login)
+│  └─ page.tsx
+│
+├─ patient-detail/
+│  └─ [id]/
+│     └─ page.tsx             # Patientendetailseite
+│
+├─ header.tsx                 # Globaler Header mit Logout
+├─ layout.tsx                 # Globales Layout
+├─ page.tsx                   # Redirect auf /login
+└─ globals.css                # Globale Styles
+```
+
+Die Struktur folgt dem **Next.js App Router** und ist bewusst minimal gehalten.
+
+---
+
+## Technologiestack
+
+### Frontend
+- Next.js (App Router)
+- React
+- TypeScript
+- CSS / Utility-Klassen
+
+### Backend
+- Django
+- Django REST Framework
+- JWT-Authentifizierung
+
+---
+
+## Projekt starten
+
+### Voraussetzungen
+- Node.js (empfohlen: Version 18 oder höher)
+- pnpm
+- Python (Version 3.10 oder höher)
+- Backend-Repository (`rls-backend`) lokal vorhanden
+
+---
+
+### Backend starten
+
+1. In den Backend-Ordner wechseln:
+```bash
+cd rls-backend
+```
+
+2. Virtuelle Python-Umgebung aktivieren (falls vorhanden):
+```bash
+venv\Scripts\activate
+```
+
+2. 1 Falls der obere schritt nicht geht zuerst:
+```bash
+python -m venv venv
+```
+
+3. Migrationen ausführen:
+```bash
+python manage.py migrate
+```
+
+4. Backend starten:
+```bash
+python manage.py runserver
+```
+
+Das Backend läuft anschließend unter:
+```
+http://127.0.0.1:8000
+```
+
+Swagger-Dokumentation:
+```
+http://127.0.0.1:8000/api/docs/
+```
+
+---
+
+### Frontend starten
+
+1. In den Frontend-Ordner wechseln:
+```bash
+cd RLS_Web_App/doctor-portal
+```
+
+2. Abhängigkeiten installieren:
+```bash
+pnpm install
+```
+
+3. Entwicklungsserver starten:
+```bash
+pnpm dev
+```
+
+Die Web-App ist anschließend erreichbar unter:
+```
 http://localhost:3000
-
-*Beenden mit:* 
-CTRL + C
+```
 
 ---
 
-### 3. Patienten anlegen
+## Designentscheidungen
 
-Da der FHIR-Server in dieser Projektkonfiguration ohne persistente Datenbank läuft, gehen alle Patientendaten beim Neustart verloren.
-Das folgende Skript legt die Testpatienten erneut an:
-
-*Im FHIR-Server Terminal:*
-bash ~/rls-care/init-patients.sh
-
-
----
-
-## 📁 Projektstruktur
-
-doctor-portal/  
-└── src/  
-  └── app/  
-    ├── layout.tsx → Grundlayout + Navigation  
-    ├── page.tsx → Startseite  
-    ├── patients/  
-    │  └── page.tsx → Patientenliste (FHIR-Abfrage)  
-    ├── patient-detail/  
-    │  └── page.tsx → Detailansicht eines einzelnen Patienten  
-    ├── encounter/  
-    │  └── page.tsx → Sprechstundenansicht (Platzhalter)  
-    └── analytics/  
-      └── page.tsx → Analysen & Diagramme (Platzhalter)
+- Keine klassische Navigation (Menü)
+- Fokus auf einen klaren medizinischen Workflow
+- Keine unnötigen Features oder Overengineering
+- Trennung von Login, Suche und Detailansicht
+- Erweiterbar für zukünftige Backend-Anbindungen (zum Beispiel echte Patientendaten)
 
 ---
 
-## 🔍 Seitenbeschreibung
+## Hinweis
 
-### `/` – Startseite  
-Kurze Einführung in das Arztportal und Hinweise zur Navigation.
-
----
-
-### `/patients` – Patientenliste  
-- Lädt Patienten vom FHIR-Server (GET /Patient)  
-- Zeigt alle vorhandenen Patienten  
-- Jeder Eintrag ist anklickbar und führt zur Detailseite
+Die Patientendaten auf der Detailseite dienen aktuell als **Platzhalter**.  
+Die Anwendung ist so aufgebaut, dass eine spätere Anbindung realer Patientendaten problemlos möglich ist.
 
 ---
 
-### `/patient-detail?id=XYZ` – Patientendetails  
-- Liest Patienten-ID aus der URL  
-- Lädt Patientendaten (GET /Patient/{id})  
-- Zeigt:
-  - Name  
-  - Geburtsdatum  
-  - Geschlecht  
-  - FHIR-ID  
-- Grundlage für spätere Erweiterungen:
-  - Observations  
-  - Symptomverlauf  
-  - Schlafdaten  
-  - Medikation  
+## Fazit
 
----
-
-### `/encounter` – Sprechstundenansicht (Platzhalter)  
-Geplant:
-- Übersicht des aktuellen Patienten  
-- Symptome  
-- Schlafqualität  
-- Medikationsverlauf  
-
----
-
-### `/analytics` – Analysen (Platzhalter)  
-Geplant:
-- Diagramme  
-- Trends  
-- Schlafmuster  
-- Verlauf der RLS-Symptomatik  
-
----
-
-## ⚙️ Konfiguration
-
-In `.env.local` muss folgendes stehen:
-
-NEXT_PUBLIC_FHIR_BASE_URL=http://localhost:8080/fhir
-
-Damit weiß das Frontend, wo der FHIR-Server läuft.
-
----
-
-## 🧱 Verwendete Technologien
-
-- **Next.js / React** – modernes Web-Frontend  
-- **TailwindCSS** – Styling  
-- **shadcn/ui** – UI-Komponenten (Button, Card, Table…)  
-- **HAPI-FHIR** – medizinischer FHIR-Server  
-- **Docker** – Infrastruktur  
-- **TypeScript** – Typensicherheit  
-
----
-
-## 🎯 Ziel des Projekts
-
-Eine intuitive und sichere Arzt-Web-Anwendung zur:
-
-- Auswertung von RLS-Symptomen  
-- Darstellung von Patientenverläufen  
-- Unterstützung therapeutischer Entscheidungen  
-- Nutzung standardisierter medizinischer Daten (FHIR)
-
----
-
-## 👥 Teamhinweis
-
-Dieses Projekt ist Teil des RLS-Care-Gesamtsystems bestehend aus:
-
-- Sensorik zur nächtlichen Messung  
-- mobiler Patienten-App  
-- FHIR-Backend  
-- Arztportal (dieses Projekt)
+SomniLink zeigt exemplarisch, wie eine einfache medizinische Web-App strukturiert und umgesetzt werden kann.  
+Der Fokus liegt auf Verständlichkeit, klarer Struktur und einem realistischen Anwendungsfall im ärztlichen Alltag.
